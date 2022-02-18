@@ -14,7 +14,7 @@
  * Copyright 2017-2018 ForgeRock AS.
  */
 
-package com.securelayer7.AuthNode;
+package com.securelayer7.authnode;
 
 import static org.forgerock.openam.auth.node.api.Action.send;
 import static org.forgerock.openam.auth.node.api.SharedStateConstants.PASSWORD;
@@ -33,6 +33,7 @@ import org.forgerock.openam.auth.node.api.AbstractDecisionNode;
 import org.forgerock.openam.auth.node.api.Action;
 import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.auth.node.api.NodeProcessException;
+import org.forgerock.openam.auth.node.api.OutputState;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.forgerock.openam.core.realms.Realm;
 import org.slf4j.Logger;
@@ -63,7 +64,7 @@ public class RequestStringNode extends SingleOutcomeNode {
 	public interface Config {
 
 		@Attribute(order = 100)
-		String propertyId();
+		String PROPERTY_ID();
 
 	}
 
@@ -77,15 +78,22 @@ public class RequestStringNode extends SingleOutcomeNode {
 	public Action process(TreeContext context) throws NodeProcessException {
 		JsonValue sharedState = context.sharedState;
 
-		String propertyId = context.request.headers.get(config.propertyId()).get(0);
+		String propertyId = context.request.headers.get(config.PROPERTY_ID()).get(0);
+		
+		sharedState.put("PROPERTY_ID", propertyId);
 
-		String script = String.format("<html> <head> <script src=\"https://p.authsafe.ai/as.js?p=%1$s*\"></script> %1$s <script>\r\n"
-				+ "_authsafe(\"userInit\", 1);**"
+		String script = String.format("<html> <head> <script src=\"https://p.authsafe.ai/as.js?p=%1$s*\"></script> %1$s <script>\r\n"				
 				+ "</script> </html> </head>", propertyId);
         
 		
 
-		return send(Arrays.asList(new ScriptTextOutputCallback(script))).replaceSharedState(sharedState).build();
+//		return send(Arrays.asList(new ScriptTextOutputCallback(script))).replaceSharedState(sharedState).build();
+		return goToNext().replaceSharedState(sharedState).build();
 
 	}
+	
+	@Override
+    public OutputState[] getOutputs() {
+            return new OutputState[] {new OutputState("PROPERTY_ID")};
+    }
 }

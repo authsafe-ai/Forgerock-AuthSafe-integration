@@ -14,7 +14,7 @@
  * Copyright 2017-2019 ForgeRock AS.
  */
 
-package com.securelayer7.AuthNode;
+package com.securelayer7.authnode;
 
 import java.util.Collections;
 import java.util.Map;
