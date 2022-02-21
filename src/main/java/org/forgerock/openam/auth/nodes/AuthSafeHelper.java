@@ -1,4 +1,4 @@
-package com.securelayer7.authnode;
+package org.forgerock.openam.auth.nodes;
 
 class AuthSafeHelper {
     static final String EV = "ev";

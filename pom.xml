@@ -12,7 +12,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2017-2020 ForgeRock AS.
+ * Copyright 2017-2018 ForgeRock AS.
  * 
 -->
 
@@ -20,15 +20,15 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>AuthSafeFRIntegration</artifactId>
+    <artifactId>ThreatMetrixAuthNode</artifactId>
 
-    <groupId>com.securelayer7</groupId>
-    <version>1.0.0-SNAPSHOT</version>    
-    <name>Template for an Auth Tree Node maven project</name>
+    <groupId>org.forgerock.am</groupId>
+    <version>1.1.0</version>
+    <name>AuthSafe Nodes</name>
     <description>An Authentication Tree Node for ForgeRock's Identity Platform</description>
 
     <properties>
-        <am.version>7.1.0</am.version>
+        <am.version>7.0.0</am.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

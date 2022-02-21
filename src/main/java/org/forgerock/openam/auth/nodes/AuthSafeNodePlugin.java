@@ -14,7 +14,7 @@
  * Copyright 2017-2019 ForgeRock AS.
  */
 
-package com.securelayer7.authnode;
+package org.forgerock.openam.auth.nodes;
 
 import java.util.Collections;
 import java.util.Map;
@@ -71,7 +71,7 @@ public class AuthSafeNodePlugin extends AbstractNodeAmPlugin {
 	@Override
 	protected Map<String, Iterable<? extends Class<? extends Node>>> getNodesByVersion() {
 		return Collections.singletonMap(AuthSafeNodePlugin.currentVersion, 
-				Collections.singletonList(RequestStringNode.class));
+				Collections.singletonList(AuthSafeProfilerNode.class));
 	}
 
     /** 
