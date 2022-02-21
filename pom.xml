@@ -20,7 +20,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>ThreatMetrixAuthNode</artifactId>
+    <artifactId>AuthSafeNode</artifactId>
 
     <groupId>org.forgerock.am</groupId>
     <version>1.1.0</version>

@@ -14,4 +14,4 @@
 # Copyright 2017-2018 ForgeRock AS.
 #
 
-com.securelayer7.customAuthNode.myCustomAuthNodePlugin
+org.forgerock.openam.auth.nodes.AuthSafeNodePlugin
