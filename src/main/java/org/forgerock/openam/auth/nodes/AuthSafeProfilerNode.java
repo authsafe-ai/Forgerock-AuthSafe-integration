@@ -67,16 +67,21 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
         JsonValue sharedState = context.sharedState;
         String propertyId;
        
-//        String propertyId = context.request.headers.get(config.propertyId()).get(0);
-        propertyId = UUID.randomUUID().toString();
+        propertyId = config.propertyId();
+        System.out.println(propertyId);
         sharedState.put("PROPERTY_ID", propertyId);
-
-        String script = String.format("<html> <head> <script src=\"https://p.authsafe.ai/as.js?p=%1$s*\"></script> %1$s <script>\r\n"				
-				+ "</script> </html> </head>", propertyId);
         
+        
+        String script = "var script = document.createElement('script');\n" +
+                "script.type = 'text/javascript';\n" +
+                "script.src = '%1$s'\n" +
+                "document.getElementsByTagName('head')[0].appendChild(script);\n";
 
-        return send(Arrays.asList(new ScriptTextOutputCallback(script),
-                                  new HiddenValueCallback("AuthSafe Property ID"))).replaceSharedState(sharedState).build();
+        
+        String scriptsrc = String.format("https://p.authsafe.ai/as.js?p=%1$s*", propertyId);
+
+        return send(Arrays.asList(new ScriptTextOutputCallback(String.format(script, scriptsrc)))).build();
+
     }
 
     @Override
