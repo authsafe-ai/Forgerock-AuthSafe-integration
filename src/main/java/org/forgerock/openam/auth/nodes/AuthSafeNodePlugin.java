@@ -16,6 +16,7 @@
 
 package org.forgerock.openam.auth.nodes;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -60,7 +61,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AuthSafeNodePlugin extends AbstractNodeAmPlugin {
 
-	static private String currentVersion = "1.0.1";
+	static private String currentVersion = "1.0.2";
 	
     /** 
      * Specify the Map of list of node classes that the plugin is providing. These will then be installed and
@@ -71,7 +72,9 @@ public class AuthSafeNodePlugin extends AbstractNodeAmPlugin {
 	@Override
 	protected Map<String, Iterable<? extends Class<? extends Node>>> getNodesByVersion() {
 		return Collections.singletonMap(AuthSafeNodePlugin.currentVersion, 
-				Collections.singletonList(AuthSafeProfilerNode.class));
+				Arrays.asList(
+			    AuthSafeProfilerNode.class,
+				AuthSafeRequestStringNode.class));
 	}
 
     /** 
@@ -108,8 +111,9 @@ public class AuthSafeNodePlugin extends AbstractNodeAmPlugin {
      */	
 	@Override
 	public void upgrade(String fromVersion) throws PluginException {
-//		super.upgrade(fromVersion);
-		pluginTools.upgradeAuthNode(AuthSafeProfilerNode.class);
+		super.upgrade(fromVersion);
+//		pluginTools.upgradeAuthNode(AuthSafeProfilerNode.class);
+//		pluginTools.upgradeAuthNode(AuthSafeRequestStringNode.class);
 	}
 
     /** 

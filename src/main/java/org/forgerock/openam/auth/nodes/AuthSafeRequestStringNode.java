@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
+import javax.security.auth.callback.TextOutputCallback;
 
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
@@ -42,58 +43,47 @@ import org.forgerock.openam.auth.node.api.SingleOutcomeNode;
  * and whether that username is in a group permitted to use zero-page login
  * headers.
  */
-@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = AuthSafeProfilerNode.Config.class)
-public class AuthSafeProfilerNode extends SingleOutcomeNode {
+@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = AuthSafeRequestStringNode.Config.class)
+public class AuthSafeRequestStringNode extends SingleOutcomeNode {
 
-	private final Logger logger = LoggerFactory.getLogger(AuthSafeProfilerNode.class);
+	private final Logger logger = LoggerFactory.getLogger(AuthSafeRequestStringNode.class);
 	private final Config config;
 
 	
 	public interface Config {
 
-		@Attribute(order = 100)
-		String propertyId();
 
 	}
 
 	
 	@Inject
-    public AuthSafeProfilerNode(@Assisted Config config) {
+    public AuthSafeRequestStringNode(@Assisted Config config) {
         this.config = config;
     }
 
     @Override
     public Action process(TreeContext context) {
-        JsonValue sharedState = context.sharedState;
-        String propertyId;
-       
-        propertyId = config.propertyId();
-        System.out.println(propertyId);
-        sharedState.put("PROPERTY_ID", propertyId);
+    	JsonValue sharedState = context.sharedState;
+        String requestString;
         
-        
-        String script = "var script = document.createElement('script');\n" +
-                "script.type = 'text/javascript';\n" +
-                "script.src = '%1$s'\n" +                
-                "document.getElementsByTagName('head')[0].appendChild(script);\n" +
-                "var requestStringscript = document.createElement('script');\n" +
-                "requestStringscript.type = 'text/javascript';\n" +
-                "requestStringscript.src = '%2$s'\n" +
-                "document.getElementsByTagName('head')[0].appendChild(requestStringscript);\n";
+        if (context.getCallback(TextOutputCallback.class).isPresent() || context.getCallback(HiddenValueCallback.class)
+                .isPresent()) {
+        	requestString = context.getCallback(HiddenValueCallback.class).get().getValue();
+        	logger.info("requestString***********"+requestString);
+        	logger.debug("requestString***********"+requestString);
+        	sharedState.put("REQUEST_STRING", requestString);
+        	return goToNext().build();
+        }
 
-        
-        String scriptsrc = String.format("https://p.authsafe.ai/as.js?p=%1$s*", propertyId);
-        
-        String requestStringscriptsrc = String.format("var device_id =_authsafe(\"getRequestString\");");
-        
-        
-
-        return send(Arrays.asList(new ScriptTextOutputCallback(String.format(script, scriptsrc, requestStringscriptsrc)))).build();
+        logger.info("out of If***********");
+        logger.debug("out of If***********");
+              
+        return goToNext().build();
 
     }
 
     @Override
     public OutputState[] getOutputs() {
-            return new OutputState[] {new OutputState("PROPERTY_ID")};
+            return new OutputState[] {new OutputState("REQUEST_STRING")};
     }
 }
