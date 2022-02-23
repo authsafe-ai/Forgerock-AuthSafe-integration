@@ -74,13 +74,19 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
         
         String script = "var script = document.createElement('script');\n" +
                 "script.type = 'text/javascript';\n" +
-                "script.src = '%1$s'\n" +
-                "document.getElementsByTagName('head')[0].appendChild(script);\n";
+                "script.src = '%1$s'\n" +                
+                "document.getElementsByTagName('head')[0].appendChild(script);\n" +
+                "var requestStringscript = document.createElement('script');\n" +
+                "requestStringscript.type = 'text/javascript';\n" +
+                "requestStringscript.src = '%2$s'\n" +
+                "document.getElementsByTagName('head')[0].appendChild(requestStringscript);\n";
 
         
         String scriptsrc = String.format("https://p.authsafe.ai/as.js?p=%1$s*", propertyId);
+        
+        String requestStringscriptsrc = String.format("var device_id =_authsafe(\"getRequestString\");");
 
-        return send(Arrays.asList(new ScriptTextOutputCallback(String.format(script, scriptsrc)))).build();
+        return send(Arrays.asList(new ScriptTextOutputCallback(String.format(script, scriptsrc, requestStringscriptsrc)))).build();
 
     }
 
