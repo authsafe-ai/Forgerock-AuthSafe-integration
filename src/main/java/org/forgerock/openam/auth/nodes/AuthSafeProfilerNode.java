@@ -77,8 +77,7 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
                 "script.src = '%1$s'\n" +                
                 "document.getElementsByTagName('head')[0].appendChild(script);\n" +
                 "var requestStringscript = document.createElement('script');\n" +
-                "requestStringscript.type = 'text/javascript';\n" +
-                "requestStringscript.src = '%2$s'\n" +
+                "requestStringscript.innerHTML  = '%2$s'\n" +
                 "document.getElementsByTagName('head')[0].appendChild(requestStringscript);\n";
 
         
