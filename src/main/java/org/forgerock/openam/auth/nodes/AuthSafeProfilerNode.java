@@ -19,23 +19,25 @@ package org.forgerock.openam.auth.nodes;
 import static org.forgerock.openam.auth.node.api.Action.send;
 
 import java.util.Arrays;
-import java.util.UUID;
+import java.util.Optional;
 
 import javax.inject.Inject;
+import javax.security.auth.callback.TextOutputCallback;
 
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.Action;
 import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.auth.node.api.OutputState;
+import org.forgerock.openam.auth.node.api.SingleOutcomeNode;
 import org.forgerock.openam.auth.node.api.TreeContext;
+import org.forgerock.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.assistedinject.Assisted;
 import com.sun.identity.authentication.callbacks.HiddenValueCallback;
 import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
-import org.forgerock.openam.auth.node.api.SingleOutcomeNode;
 
 /**
  * A node that checks to see if zero-page login headers have specified username
@@ -66,11 +68,13 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
     public Action process(TreeContext context) {
         JsonValue sharedState = context.sharedState;
         String propertyId;
-       
+        String requestString;
+        
         propertyId = config.propertyId();
         System.out.println(propertyId);
         sharedState.put("PROPERTY_ID", propertyId);
-        
+         
+        logger.error("We are in AuthSafeProfilerNode & propertyId is"+ propertyId);
         
         String script = "var script = document.createElement('script');\n" +
                 "script.type = 'text/javascript';\n" +
@@ -83,11 +87,42 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
         
         String scriptsrc = String.format("https://p.authsafe.ai/as.js?p=%1$s*", propertyId);
         
-        String requestStringscriptsrc = String.format("var device_id =_authsafe(\"getRequestString\");");
+//        String requestStringscriptsrc = String.format("var device_id =_authsafe(\"getRequestString\");");
+        
+        String requestStringscriptsrc = String.format("var device_id = 500");
         
         
-
-        return send(Arrays.asList(new ScriptTextOutputCallback(String.format(script, scriptsrc, requestStringscriptsrc)))).build();
+        if (context.getCallback(TextOutputCallback.class).isPresent() || context.getCallback(HiddenValueCallback.class)
+                .isPresent()) {
+        	requestString = context.getCallback(HiddenValueCallback.class).get().getValue();
+        	logger.error("error-We are in AuthSafeProfilerNode If condition");
+        	logger.error("error-We are in AuthSafeProfilerNode If condition context.toString()"+context.toString());
+        	logger.error("error-We are in AuthSafeProfilerNode If condition context.getCallback(HiddenValueCallback.class).toString()"+context.getCallback(HiddenValueCallback.class).toString());
+        	logger.error("error-We are in AuthSafeProfilerNode If condition context.getCallback(HiddenValueCallback.class).get().toString()"+context.getCallback(HiddenValueCallback.class).get().toString());
+        	logger.error("error-We are in AuthSafeProfilerNode If condition context"+context);
+        	logger.error("error-We are in AuthSafeProfilerNode If condition context.getCallback(HiddenValueCallback.class)"+context.getCallback(HiddenValueCallback.class));
+        	logger.error("error-We are in AuthSafeProfilerNode If condition context.getCallback(HiddenValueCallback.class).get()"+context.getCallback(HiddenValueCallback.class).get());
+        	logger.error("error-We are in AuthSafeProfilerNode If condition requestString"+requestString);
+        	
+        	sharedState.put("REQUEST_STRING", requestString);
+//        	return goToNext().build();
+        }
+        
+        logger.error("result******");  
+        
+        Optional<String> result = context.getCallback(HiddenValueCallback.class).map(HiddenValueCallback::getValue).filter(scriptOutput -> !Strings.isNullOrEmpty(scriptOutput));
+        if (result.isPresent()) {
+            JsonValue newSharedState = context.sharedState.copy();
+            logger.error("result"+result);            
+            logger.error("newSharedState"+newSharedState);
+            logger.error("newSharedState.toString()"+newSharedState.toString());
+            logger.error("result.get()"+result.get());
+            logger.error("result.get().toString()"+result.get().toString());
+            newSharedState.put("REQUEST_STRING", result.get());
+//            return goToNext().replaceSharedState(newSharedState).build();
+        }
+        return send(Arrays.asList(new ScriptTextOutputCallback(String.format(script, scriptsrc, requestStringscriptsrc))
+        		,new HiddenValueCallback("AuthSafe Request String"))).replaceSharedState(sharedState).build();
 
     }
 

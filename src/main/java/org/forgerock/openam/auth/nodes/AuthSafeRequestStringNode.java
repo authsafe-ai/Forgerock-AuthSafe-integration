@@ -17,7 +17,6 @@
 package org.forgerock.openam.auth.nodes;
 
 import static org.forgerock.openam.auth.node.api.Action.send;
-
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -27,6 +26,7 @@ import javax.security.auth.callback.TextOutputCallback;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.Action;
+import org.forgerock.openam.auth.node.api.InputState;
 import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.auth.node.api.OutputState;
 import org.forgerock.openam.auth.node.api.TreeContext;
@@ -69,19 +69,27 @@ public class AuthSafeRequestStringNode extends SingleOutcomeNode {
         if (context.getCallback(TextOutputCallback.class).isPresent() || context.getCallback(HiddenValueCallback.class)
                 .isPresent()) {
         	requestString = context.getCallback(HiddenValueCallback.class).get().getValue();
-        	logger.info("requestString***********"+requestString);
-        	logger.debug("requestString***********"+requestString);
         	sharedState.put("REQUEST_STRING", requestString);
+        	logger.info("info-We are in AuthSafeRequestStringNode If condition");
+            logger.debug("debug-We are in AuthSafeRequestStringNode If condition");
+            logger.error("error-We are in AuthSafeRequestStringNode If condition");
+            logger.error("error-We are in AuthSafeRequestStringNode If condition requestString"+requestString);
         	return goToNext().build();
         }
 
-        logger.info("out of If***********");
-        logger.debug("out of If***********");
+        logger.info("info-We are in AuthSafeRequestStringNode");
+        logger.debug("debug-We are in AuthSafeRequestStringNode");
+        logger.error("error-We are in AuthSafeRequestStringNode");
               
         return goToNext().build();
 
     }
 
+    @Override
+    public InputState[] getInputs() {
+        return new InputState[]{new InputState("PROPERTY_ID", true)};
+    }
+    
     @Override
     public OutputState[] getOutputs() {
             return new OutputState[] {new OutputState("REQUEST_STRING")};
