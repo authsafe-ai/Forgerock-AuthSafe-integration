@@ -65,7 +65,8 @@ public class AuthSafeRequestStringNode extends SingleOutcomeNode {
     public Action process(TreeContext context) {
     	JsonValue sharedState = context.sharedState;
         String requestString;
-        
+        String device_id = sharedState.get("device_id").toString();
+        logger.error("Device ID: " + device_id);
         if (context.getCallback(TextOutputCallback.class).isPresent() || context.getCallback(HiddenValueCallback.class)
                 .isPresent()) {
         	requestString = context.getCallback(HiddenValueCallback.class).get().getValue();

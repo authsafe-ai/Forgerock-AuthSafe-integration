@@ -18,12 +18,20 @@ package org.forgerock.openam.auth.nodes;
 
 import static org.forgerock.openam.auth.node.api.Action.send;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.TextOutputCallback;
 
+import com.google.common.collect.ImmutableList;
+import com.sleepycat.je.rep.impl.node.NodeState;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.Action;
@@ -47,7 +55,7 @@ import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
 @Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = AuthSafeProfilerNode.Config.class)
 public class AuthSafeProfilerNode extends SingleOutcomeNode {
 
-	private final Logger logger = LoggerFactory.getLogger(AuthSafeProfilerNode.class);
+	private static final Logger logger = LoggerFactory.getLogger(AuthSafeProfilerNode.class);
 	private final Config config;
 
 	
@@ -57,7 +65,6 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
 		String propertyId();
 
 	}
-
 	
 	@Inject
     public AuthSafeProfilerNode(@Assisted Config config) {
@@ -71,59 +78,117 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
         String requestString;
         
         propertyId = config.propertyId();
-        System.out.println(propertyId);
+
         sharedState.put("PROPERTY_ID", propertyId);
          
         logger.error("We are in AuthSafeProfilerNode & propertyId is"+ propertyId);
-        
+
+
+        String aScript = getScript(propertyId);
+        logger.error(aScript);
+
+        Optional<String> result = context.getCallback(HiddenValueCallback.class).map(HiddenValueCallback::getValue).
+                filter(scriptOutput -> !Strings.isNullOrEmpty(scriptOutput));
+        if (result.isPresent()) {
+            String resultValue = result.get();
+            logger.error("RESULT VALUE:" + resultValue);
+            JsonValue newSharedState = context.sharedState.copy();
+            newSharedState.put("device_id", resultValue);
+            return goToNext().replaceSharedState(newSharedState).build();
+        } else {
+            ImmutableList<Callback> callbacks = getScriptAndSelfSubmitCallback(aScript);
+            return send(callbacks).build();
+        }
+    }
+
+    public static ImmutableList<Callback> getScriptAndSelfSubmitCallback(String aNodeScript) {
+        String clientSideScriptExecutorFunction = createClientSideScriptExecutorFunction(aNodeScript);
+
+        ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(
+                clientSideScriptExecutorFunction);
+
+        HiddenValueCallback hiddenValueCallback = new HiddenValueCallback("AuthSafeRequestString", "false");
+        return ImmutableList.of(scriptAndSelfSubmitCallback, hiddenValueCallback);
+
+    }
+
+    public static String getScript(String propertyId) {
         String script = "var script = document.createElement('script');\n" +
                 "script.type = 'text/javascript';\n" +
-                "script.src = '%1$s'\n" +                
+                "script.src = '%1$s'\n" +
                 "document.getElementsByTagName('head')[0].appendChild(script);\n" +
                 "var requestStringscript = document.createElement('script');\n" +
                 "requestStringscript.innerHTML  = '%2$s'\n" +
-                "document.getElementsByTagName('head')[0].appendChild(requestStringscript);\n";
+                "var device_id = '502'\n" +
+                "document.getElementsByTagName('head')[0].appendChild(requestStringscript);\n" +
+                "var submitCollectedData = function functionSubmitCollectedData() {\n" +
+                "    if (typeof loginHelpers !== 'undefined') {\n" +
+                "        loginHelpers.setHiddenCallback('AuthSafeRequestString', device_id);\n" +
+                "    } else {\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "if (typeof loginHelpers !== 'undefined') {\n" +
+                "    if (loginHelpers) {\n" +
+                "        loginHelpers.nextStepCallback(submitCollectedData)\n" +
+                "    }\n" +
+                "} else {\n" +
+                "    var userNameEventListener = function functionUserNameEventListener() {\n" +
+                "        var userNameField = document.getElementsByClassName(\"form-control\")[0];\n" +
+                "        userNameField.removeEventListener(\"blur\", userNameEventListener);\n" +
+                "        var submitButton = document.getElementsByClassName(\"btn-primary\")[0];\n" +
+                "        submitButton.addEventListener(\"click\", submitCollectedData, false);\n" +
+                "    };\n" +
+                "\n" +
+                "    var submitCollectedData = function functionSubmitCollectedData() {\n" +
+                "        var outputVariable = document.forms[0].elements['AuthSafeRequestString'];\n" +
+                "        outputVariable.value = device_id;\n" +
+                "    }\n" +
+                "\n" +
+                "    if (document.getElementsByClassName(\"form-control\")[0] != undefined) {\n" +
+                "        var userNameField = document.getElementsByClassName(\"form-control\")[0];\n" +
+                "        userNameField.addEventListener(\"blur\", userNameEventListener);\n" +
+                "    }\n" +
+                "}";
 
-        
+
         String scriptsrc = String.format("https://p.authsafe.ai/as.js?p=%1$s*", propertyId);
-        
-//        String requestStringscriptsrc = String.format("var device_id =_authsafe(\"getRequestString\");");
-        
-        String requestStringscriptsrc = String.format("var device_id = 500");
-        
-        
-        if (context.getCallback(TextOutputCallback.class).isPresent() || context.getCallback(HiddenValueCallback.class)
-                .isPresent()) {
-        	requestString = context.getCallback(HiddenValueCallback.class).get().getValue();
-        	logger.error("error-We are in AuthSafeProfilerNode If condition");
-        	logger.error("error-We are in AuthSafeProfilerNode If condition context.toString()"+context.toString());
-        	logger.error("error-We are in AuthSafeProfilerNode If condition context.getCallback(HiddenValueCallback.class).toString()"+context.getCallback(HiddenValueCallback.class).toString());
-        	logger.error("error-We are in AuthSafeProfilerNode If condition context.getCallback(HiddenValueCallback.class).get().toString()"+context.getCallback(HiddenValueCallback.class).get().toString());
-        	logger.error("error-We are in AuthSafeProfilerNode If condition context"+context);
-        	logger.error("error-We are in AuthSafeProfilerNode If condition context.getCallback(HiddenValueCallback.class)"+context.getCallback(HiddenValueCallback.class));
-        	logger.error("error-We are in AuthSafeProfilerNode If condition context.getCallback(HiddenValueCallback.class).get()"+context.getCallback(HiddenValueCallback.class).get());
-        	logger.error("error-We are in AuthSafeProfilerNode If condition requestString"+requestString);
-        	
-        	sharedState.put("REQUEST_STRING", requestString);
-//        	return goToNext().build();
-        }
-        
-        logger.error("result******");  
-        
-        Optional<String> result = context.getCallback(HiddenValueCallback.class).map(HiddenValueCallback::getValue).filter(scriptOutput -> !Strings.isNullOrEmpty(scriptOutput));
-        if (result.isPresent()) {
-            JsonValue newSharedState = context.sharedState.copy();
-            logger.error("result"+result);            
-            logger.error("newSharedState"+newSharedState);
-            logger.error("newSharedState.toString()"+newSharedState.toString());
-            logger.error("result.get()"+result.get());
-            logger.error("result.get().toString()"+result.get().toString());
-            newSharedState.put("REQUEST_STRING", result.get());
-//            return goToNext().replaceSharedState(newSharedState).build();
-        }
-        return send(Arrays.asList(new ScriptTextOutputCallback(String.format(script, scriptsrc, requestStringscriptsrc))
-        		,new HiddenValueCallback("AuthSafe Request String"))).replaceSharedState(sharedState).build();
 
+//        String requestStringscriptsrc = String.format("var device_id =_authsafe(\"getRequestString\");");
+
+        String requestStringscriptsrc = String.format("var device_id = 500;");
+
+        //String myScript = readFileString("/js/authnode-script.js");
+
+        return String.format(script, scriptsrc, requestStringscriptsrc);
+
+    }
+
+    private static String createClientSideScriptExecutorFunction(String script) {
+        logger.debug("createClientSideScriptExecutorFunction");
+        return String.format(
+                "(function(output) {\n" +
+                        "    %s\n" + // script
+                        "}) (document);\n",
+                script
+        );
+    }
+
+    public static String readFileString(String path) {
+        try {
+            InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
+            String data = readAllLines(in);
+            in.close();
+            return data;
+        } catch (NullPointerException | IOException e) {
+            logger.error("Can't read file " + path, e);
+            return null;
+        }
+    }
+
+    public static String readAllLines(InputStream in) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        return reader.lines().parallel().collect(Collectors.joining("\n"));
     }
 
     @Override
