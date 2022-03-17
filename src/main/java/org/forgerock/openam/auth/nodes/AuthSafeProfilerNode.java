@@ -22,19 +22,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.TextOutputCallback;
 
-import com.google.common.collect.ImmutableList;
-import com.sleepycat.je.rep.impl.node.NodeState;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.Action;
+import org.forgerock.openam.auth.node.api.ExternalRequestContext;
 import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.auth.node.api.OutputState;
 import org.forgerock.openam.auth.node.api.SingleOutcomeNode;
@@ -43,9 +43,12 @@ import org.forgerock.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.assistedinject.Assisted;
 import com.sun.identity.authentication.callbacks.HiddenValueCallback;
 import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
+
+import groovyjarjarantlr.collections.List;
 
 /**
  * A node that checks to see if zero-page login headers have specified username
@@ -74,15 +77,46 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
     @Override
     public Action process(TreeContext context) {
         JsonValue sharedState = context.sharedState;
-        String propertyId;
-        String requestString;
+        ExternalRequestContext request = context.request;
+        
+        String propertyId;        
         
         propertyId = config.propertyId();
 
-        sharedState.put("PROPERTY_ID", propertyId);
-         
-        logger.error("We are in AuthSafeProfilerNode & propertyId is"+ propertyId);
-
+        sharedState.put("PROPERTY_ID", propertyId);        
+        
+        String ip = request.clientIp;
+        String ua = request.headers.get("user-agent").get(0); 
+        String ho = request.headers.get("host").get(0);
+        String rf = request.headers.get("referer").get(0);
+        String url = request.serverUrl;
+        String a = request.headers.get("accept").get(0);
+//        String ac = request.headers.get("accept").toString();//TODO:Not found in headers
+        String ae = request.headers.get("accept-encoding").get(0);
+        String al = request.headers.get("accept-language").get(0);
+        
+        logger.error("ip" + ":" + ip );
+        logger.error("ua" + ":" + ua);
+        logger.error("ho" + ":" + ho);
+        logger.error("rf" + ":" + rf);
+        logger.error("url" + ":" + url);
+        logger.error("a" + ":" + a);
+        logger.error("ae" + ":" + ae);
+        logger.error("al" + ":" + al);
+        
+        
+        
+        sharedState.put("ip", ip);
+        sharedState.put("ua", ua);
+        sharedState.put("ho", ho);
+        sharedState.put("rf", rf);
+        sharedState.put("url", url);
+        
+        sharedState.put("a", a);
+        sharedState.put("ac", "");
+        sharedState.put("ae", ae);
+        sharedState.put("al", al);
+                
 
         String aScript = getScript(propertyId);
         logger.error(aScript);
@@ -118,9 +152,9 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
                 "script.src = '%1$s'\n" +
                 "document.getElementsByTagName('head')[0].appendChild(script);\n" +
                 "var requestStringscript = document.createElement('script');\n" +
-                "requestStringscript.innerHTML  = '%2$s'\n" +
-                "var device_id = '502'\n" +
-                "document.getElementsByTagName('head')[0].appendChild(requestStringscript);\n" +
+//                "requestStringscript.innerHTML  = '%2$s'\n" +
+                "var device_id;\n" +
+                "document.getElementsByTagName('body')[0].appendChild(requestStringscript);\n" +
                 "var submitCollectedData = function functionSubmitCollectedData() {\n" +
                 "    if (typeof loginHelpers !== 'undefined') {\n" +
                 "        loginHelpers.setHiddenCallback('AuthSafeRequestString', device_id);\n" +
@@ -142,7 +176,7 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
                 "\n" +
                 "    var submitCollectedData = function functionSubmitCollectedData() {\n" +
                 "        var outputVariable = document.forms[0].elements['AuthSafeRequestString'];\n" +
-                "        outputVariable.value = device_id;\n" +
+                "        outputVariable.value = _authsafe(\"getRequestString\");\n" +
                 "    }\n" +
                 "\n" +
                 "    if (document.getElementsByClassName(\"form-control\")[0] != undefined) {\n" +
@@ -152,15 +186,19 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
                 "}";
 
 
-        String scriptsrc = String.format("https://p.authsafe.ai/as.js?p=%1$s*", propertyId);
+        String scriptsrc = String.format("https://p.authsafe.ai/as.js?p=%1$s", propertyId);
 
+       
 //        String requestStringscriptsrc = String.format("var device_id =_authsafe(\"getRequestString\");");
+        
+//        String requestStringscriptsrc = String.format("var device_id =507");
 
-        String requestStringscriptsrc = String.format("var device_id = 500;");
+//        String requestStringscriptsrc = String.format("var device_id = '500';");
 
         //String myScript = readFileString("/js/authnode-script.js");
 
-        return String.format(script, scriptsrc, requestStringscriptsrc);
+//        return String.format(script, scriptsrc, requestStringscriptsrc);
+        return String.format(script, scriptsrc);
 
     }
 
