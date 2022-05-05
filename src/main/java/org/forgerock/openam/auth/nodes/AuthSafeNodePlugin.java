@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AuthSafeNodePlugin extends AbstractNodeAmPlugin {
 
-	static private String currentVersion = "1.0.2";
+	static private String currentVersion = "2.0.7";
 	
     /** 
      * Specify the Map of list of node classes that the plugin is providing. These will then be installed and
@@ -73,8 +73,14 @@ public class AuthSafeNodePlugin extends AbstractNodeAmPlugin {
 	protected Map<String, Iterable<? extends Class<? extends Node>>> getNodesByVersion() {
 		return Collections.singletonMap(AuthSafeNodePlugin.currentVersion, 
 				Arrays.asList(
-			    AuthSafeProfilerNode.class,
-				AuthSafeRequestStringNode.class));
+			    AuthSafeProfileNode.class,
+				AuthSafeRequestStringNode.class,
+				AuthSafeOTPSenderNode.class,
+				AuthSafeDeviceApproveRequestNode.class,
+				AuthSafeDeviceDenyRequestNode.class,
+				AuthSafeEmailSuspendNode.class,
+				AuthSafeEmailCollectorNode.class,
+				AuthSafeResetPasswordNode.class));
 	}
 
     /** 

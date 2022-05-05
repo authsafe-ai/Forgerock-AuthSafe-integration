@@ -55,10 +55,10 @@ import groovyjarjarantlr.collections.List;
  * and whether that username is in a group permitted to use zero-page login
  * headers.
  */
-@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = AuthSafeProfilerNode.Config.class)
-public class AuthSafeProfilerNode extends SingleOutcomeNode {
+@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = AuthSafeProfileNode.Config.class)
+public class AuthSafeProfileNode extends SingleOutcomeNode {
 
-	private static final Logger logger = LoggerFactory.getLogger(AuthSafeProfilerNode.class);
+	private static final Logger logger = LoggerFactory.getLogger(AuthSafeProfileNode.class);
 	private final Config config;
 
 	
@@ -66,11 +66,14 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
 
 		@Attribute(order = 100)
 		String propertyId();
+		
+		@Attribute(order = 200)
+		String propertySecret();
 
 	}
 	
 	@Inject
-    public AuthSafeProfilerNode(@Assisted Config config) {
+    public AuthSafeProfileNode(@Assisted Config config) {
         this.config = config;
     }
 
@@ -79,11 +82,14 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
         JsonValue sharedState = context.sharedState;
         ExternalRequestContext request = context.request;
         
-        String propertyId;        
+        String propertyId;
+        String propertySecret;
         
         propertyId = config.propertyId();
+        propertySecret = config.propertySecret();
 
-        sharedState.put("PROPERTY_ID", propertyId);        
+        sharedState.put("PROPERTY_ID", propertyId);
+        sharedState.put("PROPERTY_SECRET", propertySecret);
         
         String ip = request.clientIp;
         String ua = request.headers.get("user-agent").get(0); 
@@ -116,7 +122,7 @@ public class AuthSafeProfilerNode extends SingleOutcomeNode {
         sharedState.put("ac", "");
         sharedState.put("ae", ae);
         sharedState.put("al", al);
-                
+        
 
         String aScript = getScript(propertyId);
         logger.error(aScript);

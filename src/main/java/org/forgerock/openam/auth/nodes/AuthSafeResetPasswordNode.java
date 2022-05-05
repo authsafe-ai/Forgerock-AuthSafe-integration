@@ -26,9 +26,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import static org.forgerock.openam.auth.nodes.helpers.AuthNodeUserIdentityHelper.getAMIdentity;
+import org.forgerock.openam.identity.idm.IdentityUtils;
 import javax.inject.Inject;
-import org.forgerock.openam.utils.CollectionUtils;
+import static com.sun.identity.idm.IdType.USER;
 import org.apache.commons.lang.StringUtils;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.auth.node.api.Action;
@@ -37,39 +37,33 @@ import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.auth.node.api.NodeProcessException;
 import org.forgerock.openam.auth.node.api.OutcomeProvider;
 import org.forgerock.openam.auth.node.api.OutputState;
+import org.forgerock.openam.auth.node.api.SingleOutcomeNode;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.forgerock.util.i18n.PreferredLocales;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.forgerock.openam.core.CoreWrapper;
-import org.forgerock.openam.identity.idm.IdentityUtils;
-
+import static org.forgerock.openam.auth.node.api.SharedStateConstants.REALM;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.assistedinject.Assisted;
 import com.google.gson.Gson;
-import com.sun.identity.idm.AMIdentity;
-import com.sun.identity.idm.IdRepoException;
-import com.iplanet.sso.SSOException;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.Optional;
+
 
 /**
  * A node that checks to see if zero-page login headers have specified username
  * and whether that username is in a group permitted to use zero-page login
  * headers.
  */
-@Node.Metadata(outcomeProvider = AuthSafeRequestStringNode.AuthSafeOutcomeProvider.class, configClass = AuthSafeRequestStringNode.Config.class)
-public class AuthSafeRequestStringNode implements Node {
+@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = AuthSafeResetPasswordNode.Config.class)
+public class AuthSafeResetPasswordNode extends SingleOutcomeNode {
 	
-	private final Logger logger = LoggerFactory.getLogger(AuthSafeRequestStringNode.class);
+	private final Logger logger = LoggerFactory.getLogger(AuthSafeResetPasswordNode.class);
 	private final Config config;
-    private final CoreWrapper coreWrapper;
-    private final IdentityUtils identityUtils;
+	private final IdentityUtils identityUtils;
+
 	
 	public interface Config {
 
@@ -78,25 +72,19 @@ public class AuthSafeRequestStringNode implements Node {
 
 	
 	@Inject
-    public AuthSafeRequestStringNode(@Assisted Config config, CoreWrapper coreWrapper,
-            IdentityUtils identityUtils) {
+    public AuthSafeResetPasswordNode(@Assisted Config config, IdentityUtils identityUtils) {
         this.config = config;
-        this.coreWrapper = coreWrapper;
         this.identityUtils = identityUtils;
     }
 
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
     	JsonValue sharedState = context.sharedState;
+    	final String realm = context.sharedState.get(REALM).asString();
     	    	
     	String userName = context.sharedState.get("username").asString();
-    	String email = "";
-    	Optional<AMIdentity> identity = getAMIdentity(context, identityUtils, coreWrapper);
-        
-        if (!identity.isEmpty()) {
-        	email = getToEmailAddress(identity.get(), userName);
-            context.sharedState.add("EMAIL_ADDRESS", email);
-        }       
+    	String email = context.sharedState.get("objectAttributes").get("mail").asString();
+    	
     	
     	logger.error("username"+ userName);    	
     	
@@ -107,20 +95,18 @@ public class AuthSafeRequestStringNode implements Node {
     	String ev;
     	
         if(StringUtils.isNotBlank(transientStateeoneTimePassword)) {
-    		ev = "login_failed";
+    		ev = "reset_password_failed";
     	}else {
-    		ev = "login_succeeded";
+    		ev = "reset_password_succeeded";
     	}
-        
-        String[] uid = null;
-        String uniID = "";
-        
-        if (!identity.isEmpty()) {
-    	Optional<String> OuniversalId = context.universalId;
-    	uid = OuniversalId.get().split(",");
-    	uniID = uid[0].replace("id=", "");
-        }
-        
+    	
+        Optional<String> OuniversalId = identityUtils.getUniversalId(userName, realm, USER);
+    	logger.error("OuniversalId"+ OuniversalId.get());
+    	String[] uid = OuniversalId.get().split(",");
+    	
+    	logger.error("OuniversalId"+ OuniversalId.get());
+    	logger.error("uid"+ uid[0].replace("id=", ""));
+    	
     	
     	logger.error("SharedState"+ context.sharedState.toString());
     	logger.error("transientState"+ context.transientState.toString());
@@ -140,11 +126,11 @@ public class AuthSafeRequestStringNode implements Node {
         
 		  
 		  
-	      String propertyID = sharedState.get("PROPERTY_ID").asString();
-	      
-	      String propertySecret = sharedState.get("PROPERTY_SECRET").asString();
-	      
-	      String plainCredentials = propertyID + ":" + propertySecret;
+        String propertyID = sharedState.get("PROPERTY_ID").asString();
+
+        String propertySecret = sharedState.get("PROPERTY_SECRET").asString();
+
+	    String plainCredentials = propertyID + ":" + propertySecret;
 	      
 	      String base64Credentials = new String(Base64.getEncoder().encode(plainCredentials.getBytes()));
 	      
@@ -157,7 +143,7 @@ public class AuthSafeRequestStringNode implements Node {
 			object.put("dID", device_id);
 		      
 		      JSONObject uex = new JSONObject();
-		      uex.put("email", email);
+		      uex.put("email", "");
 		      uex.put("username", userName);
 		      
 		      object.put("uex", uex);
@@ -178,7 +164,7 @@ public class AuthSafeRequestStringNode implements Node {
 		      h.put("url", url);
 		      
 		      object.put("h", h);
-		      object.put("uID", uniID);
+		      object.put("uID", uid[0].replace("id=", ""));
 		      
 		      json = object.toString();
 		      
@@ -192,7 +178,7 @@ public class AuthSafeRequestStringNode implements Node {
 	      HttpClient client = HttpClient.newHttpClient();
 	     
 	      HttpRequest request = HttpRequest.newBuilder()
-	                .uri(URI.create("https://a.authsafe.ai/v1/login"))
+	                .uri(URI.create("https://a.authsafe.ai/v1/reset-password"))
 	                .POST(BodyPublishers.ofString(json))
 	                .header("Authorization", authorizationHeader)
 	                .header("Content-Type", "application/json")
@@ -217,106 +203,18 @@ public class AuthSafeRequestStringNode implements Node {
 		logger.error(request.method());
 		logger.error(request.uri().toString());
 		logger.error(response.body());
-
 		
-
-		String responseStatus = obj.status;
-		String responseDeviceId = obj.device.device_id;
-		String location = obj.device.location;
-		String name = obj.device.name;
-		logger.error("responseDeviceId"+responseDeviceId);
-		logger.error("location"+location);
-		logger.error("name"+name);
-		sharedState.put("responseDeviceId", responseDeviceId);
-		sharedState.put("location", location);
-		sharedState.put("name", name);
-        if (StringUtils.isEmpty(responseStatus)) {
-            throw new NodeProcessException("Error, Not received response");
-        }
-        if (StringUtils.equals(AuthSafeResultOutcome.ALLOW.toString(), responseStatus)) {
-        	logger.error("ALLOW");
-            return Action.goTo(AuthSafeResultOutcome.ALLOW.name()).build();
-        } else if (StringUtils.equals(AuthSafeResultOutcome.CHALLENGE.toString(), responseStatus)) {
-        	logger.error("CHALLENGE");
-            return Action.goTo(AuthSafeResultOutcome.CHALLENGE.name()).build();
-        } else if (StringUtils.equals(AuthSafeResultOutcome.DENY.toString(), responseStatus)) {
-        	logger.error("DENY");
-            return Action.goTo(AuthSafeResultOutcome.DENY.name()).build();
-        }
-        return Action.goTo(AuthSafeResultOutcome.DENY.name()).build();
-
+		return goToNext().build();
     }
     
-    private enum AuthSafeResultOutcome {
 
-        ALLOW("allow"),
-        CHALLENGE("challenge"),
-        DENY("deny");
-
-        private final String stringName;
-
-        AuthSafeResultOutcome(String stringName) {
-            this.stringName = stringName;
-        }
-
-        @Override
-        public String toString() {
-            return stringName;
-        }
-    }
-
-    public static class AuthSafeOutcomeProvider implements OutcomeProvider {
-        @Override
-        public List<Outcome> getOutcomes(PreferredLocales locales, JsonValue nodeAttributes) {
-           
-            return ImmutableList.of(
-                    new Outcome(AuthSafeResultOutcome.ALLOW.name(), "Allow"),
-                    new Outcome(AuthSafeResultOutcome.CHALLENGE.name(), "Challenge"),
-                    new Outcome(AuthSafeResultOutcome.DENY.name(), "Deny"));
-        }
-    }
-    
-    private String getToEmailAddress(AMIdentity identity, String username
-            ) throws NodeProcessException {
-        String toEmailAddress;
-        try {
-            toEmailAddress = getEmailAddress(identity, username);
-            if (toEmailAddress == null) {
-                logger.warn("Email not found");
-                throw new NodeProcessException("email.not.found");
-            }
-        } catch (IdRepoException | SSOException e) {
-            logger.warn("Email lookup failure", e);
-            throw new NodeProcessException("email.lookup.failure");
-        }
-        return toEmailAddress;
-    }
-
-    private String getEmailAddress(AMIdentity identity, String userName) throws IdRepoException, SSOException {
-        String emailAttribute = "mail";
-
-        logger.debug("Using email attribute of {}", emailAttribute);
-
-        Set<String> emails = identity.getAttribute(emailAttribute);
-        String mail = null;
-
-        if (CollectionUtils.isNotEmpty(emails)) {
-            mail = emails.iterator().next();
-            logger.debug("Email address found {} with username : {}", mail, userName);
-        } else {
-            logger.debug("no email found with username : {}", userName);
-        }
-
-        return mail;
-    }
-    
     @Override
     public InputState[] getInputs() {
-        return new InputState[]{new InputState("PROPERTY_ID", true)};
+        return new InputState[]{new InputState("RESET_REQEUST", true)};
     }
     
     @Override
     public OutputState[] getOutputs() {
-            return new OutputState[] {new OutputState("REQUEST_STRING")};
+            return new OutputState[] {new OutputState("PASSWORD_RESETs")};
     }
 }
