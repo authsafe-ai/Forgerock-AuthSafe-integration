@@ -38,4 +38,4 @@ This node sends a request to AuthSafe API and provides information about passwor
  ### Example Flow
  
  
- ![SAML_TREE](./images/threatmetrix_flow.png)
+ ![SAML_TREE](./images/ExampleFlow.png)
