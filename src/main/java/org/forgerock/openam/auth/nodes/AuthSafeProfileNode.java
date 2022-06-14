@@ -47,7 +47,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.assistedinject.Assisted;
 import com.sun.identity.authentication.callbacks.HiddenValueCallback;
 import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
-
+import org.forgerock.openam.sm.annotations.adapters.Password;
 import groovyjarjarantlr.collections.List;
 
 /**
@@ -68,7 +68,8 @@ public class AuthSafeProfileNode extends SingleOutcomeNode {
 		String propertyId();
 		
 		@Attribute(order = 200)
-		String propertySecret();
+		@Password
+		char[] propertySecret();
 
 	}
 	
@@ -86,7 +87,7 @@ public class AuthSafeProfileNode extends SingleOutcomeNode {
         String propertySecret;
         
         propertyId = config.propertyId();
-        propertySecret = config.propertySecret();
+        propertySecret = String.valueOf(config.propertySecret());
 
         sharedState.put("PROPERTY_ID", propertyId);
         sharedState.put("PROPERTY_SECRET", propertySecret);
@@ -125,13 +126,11 @@ public class AuthSafeProfileNode extends SingleOutcomeNode {
         
 
         String aScript = getScript(propertyId);
-        logger.error(aScript);
 
         Optional<String> result = context.getCallback(HiddenValueCallback.class).map(HiddenValueCallback::getValue).
                 filter(scriptOutput -> !Strings.isNullOrEmpty(scriptOutput));
         if (result.isPresent()) {
             String resultValue = result.get();
-            logger.error("RESULT VALUE:" + resultValue);
             JsonValue newSharedState = context.sharedState.copy();
             newSharedState.put("device_id", resultValue);
             return goToNext().replaceSharedState(newSharedState).build();
@@ -194,22 +193,12 @@ public class AuthSafeProfileNode extends SingleOutcomeNode {
 
         String scriptsrc = String.format("https://p.authsafe.ai/as.js?p=%1$s", propertyId);
 
-       
-//        String requestStringscriptsrc = String.format("var device_id =_authsafe(\"getRequestString\");");
-        
-//        String requestStringscriptsrc = String.format("var device_id =507");
 
-//        String requestStringscriptsrc = String.format("var device_id = '500';");
-
-        //String myScript = readFileString("/js/authnode-script.js");
-
-//        return String.format(script, scriptsrc, requestStringscriptsrc);
         return String.format(script, scriptsrc);
 
     }
 
     private static String createClientSideScriptExecutorFunction(String script) {
-        logger.debug("createClientSideScriptExecutorFunction");
         return String.format(
                 "(function(output) {\n" +
                         "    %s\n" + // script

@@ -181,8 +181,7 @@ public class AuthSafeRequestStringNode implements Node {
 		      object.put("uID", uniID);
 		      
 		      json = object.toString();
-		      
-		      logger.error("json request:"+json);
+
 
 		} catch (JSONException e1) {
 			// TODO Auto-generated catch block
