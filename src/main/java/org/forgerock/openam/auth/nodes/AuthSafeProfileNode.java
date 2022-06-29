@@ -101,15 +101,7 @@ public class AuthSafeProfileNode extends SingleOutcomeNode {
 //        String ac = request.headers.get("accept").toString();//TODO:Not found in headers
         String ae = request.headers.get("accept-encoding").get(0);
         String al = request.headers.get("accept-language").get(0);
-        
-        logger.error("ip" + ":" + ip );
-        logger.error("ua" + ":" + ua);
-        logger.error("ho" + ":" + ho);
-        logger.error("rf" + ":" + rf);
-        logger.error("url" + ":" + url);
-        logger.error("a" + ":" + a);
-        logger.error("ae" + ":" + ae);
-        logger.error("al" + ":" + al);
+
         
         
         
