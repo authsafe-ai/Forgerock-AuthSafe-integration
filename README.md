@@ -26,6 +26,7 @@ This node makes a request to the AuthSafe API to retrieve a risk signal about th
 
 ### AuthSafe Risk Action Node
 This node determines whether to take any action on a particular signal based on the Take Action flag from the node configuration. 
+
 #### AuthSafe Risk Action Node Configuration
 •	Take Action – When enabled, it takes action based on a signal. Whether using multifactor authentication or sending a password reset email.
 
@@ -55,5 +56,15 @@ This node sends a request to AuthSafe API and provides information about passwor
 
  ### Example Flow
  
- 
- ![SAML_TREE](./images/ExampleFlow.png)
+ ![SAML_TREE](./images/ExampleFlow2.png)
+
+#### Message Node Configuration
+•	Message
+    - Key: Deny
+    - Value: Suspicious activity
+•	Positive answer
+    - Key: True
+    - Value: Reset 
+•	Negative answer
+    - Key: False
+    - Value: Exit

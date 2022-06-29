@@ -36,6 +36,7 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.Action;
 import org.forgerock.openam.auth.node.api.InputState;
 import org.forgerock.openam.auth.node.api.Node;
@@ -43,11 +44,11 @@ import org.forgerock.openam.auth.node.api.OutputState;
 import org.forgerock.openam.auth.node.api.SingleOutcomeNode;
 import org.forgerock.openam.auth.node.api.SuspendedTextOutputCallback;
 import org.forgerock.openam.auth.node.api.TreeContext;
+import org.forgerock.openam.sm.annotations.adapters.Password;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.assistedinject.Assisted;
-//import org.forgerock.openam.auth.nodes.OTPGenerator;
 /**
  * A node that checks to see if zero-page login headers have specified username
  * and whether that username is in a group permitted to use zero-page login
@@ -61,6 +62,25 @@ public class AuthSafeEmailSuspendNode extends SingleOutcomeNode {
 
 	
 	public interface Config {
+
+	    @Attribute(order = 100)
+        String smtp_email();
+
+        @Attribute(order = 200)
+        @Password
+        char[] smtp_password();
+
+        @Attribute(order = 300)
+        String smtp_auth();
+
+        @Attribute(order = 400)
+        String smtp_ssl_enable();
+
+        @Attribute(order = 500)
+        String smtp_host();
+        
+        @Attribute(order = 600)
+        String smtp_port();
 		
 	}
 	
@@ -89,26 +109,26 @@ public class AuthSafeEmailSuspendNode extends SingleOutcomeNode {
      	String to = context.sharedState.get("EMAIL_ADDRESS").asString();
 
      		// Sender's email ID needs to be mentioned
-     	String from = "jignesh.shah.1988a@gmail.com";
+     	String from = config.smtp_email();
 
      		// Assuming you are sending email from through gmails smtp
-     	String host = "smtp.gmail.com";
+     	String host = config.smtp_host();
 
      		// Get system properties
      		Properties properties = System.getProperties();
 
      		// Setup mail server
      		properties.put("mail.smtp.host", host);
-     		properties.put("mail.smtp.port", "465");
-     		properties.put("mail.smtp.ssl.enable", "true");
-     		properties.put("mail.smtp.auth", "true");
+     		properties.put("mail.smtp.port", config.smtp_port());
+     		properties.put("mail.smtp.ssl.enable", config.smtp_ssl_enable());
+     		properties.put("mail.smtp.auth", config.smtp_auth());
 
      		// Get the Session object.// and pass username and password
      		Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
 
      			protected PasswordAuthentication getPasswordAuthentication() {
 
-     				return new PasswordAuthentication("jignesh.shah.1988a@gmail.com", "ForgeRock@123");
+     				return new PasswordAuthentication(config.smtp_email(), String.valueOf(config.smtp_password()));
 
      			}
 

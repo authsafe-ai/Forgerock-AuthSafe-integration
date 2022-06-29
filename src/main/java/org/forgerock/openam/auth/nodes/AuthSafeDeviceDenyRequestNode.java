@@ -83,9 +83,6 @@ public class AuthSafeDeviceDenyRequestNode extends SingleOutcomeNode {
     public Action process(TreeContext context) {
         JsonValue sharedState = context.sharedState;
         String OTP = sharedState.get("OTP").asString();
-        logger.error("Device Management Request");
-        logger.error("Device Management Request OTP:"+OTP);
-        logger.error("SharedState"+ context.sharedState.toString());
         
         String propertyID = sharedState.get("PROPERTY_ID").asString();
 
@@ -115,14 +112,6 @@ public class AuthSafeDeviceDenyRequestNode extends SingleOutcomeNode {
 		}
       
       ResponseBO obj = new Gson().fromJson(response.body(), ResponseBO.class);
-      System.out.println(obj.status);
-
-        logger.error(response.toString());
-		logger.error(request.headers().toString());
-		logger.error(request.method());
-		logger.error(request.uri().toString());
-		logger.error(response.body());
-        
         return goToNext()
         		.replaceSharedState(context.sharedState.copy().put("errorMessage", "OTP attempts limit reached, you failed to verify so login is denied"))
         		.build();

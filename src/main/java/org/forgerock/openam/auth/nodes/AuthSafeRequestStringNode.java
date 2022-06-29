@@ -97,12 +97,9 @@ public class AuthSafeRequestStringNode implements Node {
         	email = getToEmailAddress(identity.get(), userName);
             context.sharedState.add("EMAIL_ADDRESS", email);
         }       
-    	
-    	logger.error("username"+ userName);    	
-    	
+
     	String transientStateeoneTimePassword = context.transientState.get("oneTimePassword").asString();    	
-    	
-    	logger.error("transientStateeoneTimePassword"+ transientStateeoneTimePassword);    	
+
     	
     	String ev;
     	
@@ -121,12 +118,8 @@ public class AuthSafeRequestStringNode implements Node {
     	uniID = uid[0].replace("id=", "");
         }
         
-    	
-    	logger.error("SharedState"+ context.sharedState.toString());
-    	logger.error("transientState"+ context.transientState.toString());
-    	
+
         String device_id = sharedState.get("device_id").asString();
-        logger.error("Device ID: " + device_id);
 
         String ip = sharedState.get("ip").asString();
         String ua = sharedState.get("ua").asString();
@@ -184,7 +177,6 @@ public class AuthSafeRequestStringNode implements Node {
 
 
 		} catch (JSONException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	      	      
@@ -204,28 +196,17 @@ public class AuthSafeRequestStringNode implements Node {
 			            HttpResponse.BodyHandlers.ofString());
 			obj = new Gson().fromJson(response.body(), ResponseBO.class);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		logger.error(response.toString());
-		logger.error(request.headers().toString());
-		logger.error(request.method());
-		logger.error(request.uri().toString());
-		logger.error(response.body());
-
-		
 
 		String responseStatus = obj.status;
 		String responseDeviceId = obj.device.device_id;
 		String location = obj.device.location;
 		String name = obj.device.name;
-		logger.error("responseDeviceId"+responseDeviceId);
-		logger.error("location"+location);
-		logger.error("name"+name);
+
 		sharedState.put("responseDeviceId", responseDeviceId);
 		sharedState.put("location", location);
 		sharedState.put("name", name);
@@ -233,13 +214,10 @@ public class AuthSafeRequestStringNode implements Node {
             throw new NodeProcessException("Error, Not received response");
         }
         if (StringUtils.equals(AuthSafeResultOutcome.ALLOW.toString(), responseStatus)) {
-        	logger.error("ALLOW");
             return Action.goTo(AuthSafeResultOutcome.ALLOW.name()).build();
         } else if (StringUtils.equals(AuthSafeResultOutcome.CHALLENGE.toString(), responseStatus)) {
-        	logger.error("CHALLENGE");
             return Action.goTo(AuthSafeResultOutcome.CHALLENGE.name()).build();
         } else if (StringUtils.equals(AuthSafeResultOutcome.DENY.toString(), responseStatus)) {
-        	logger.error("DENY");
             return Action.goTo(AuthSafeResultOutcome.DENY.name()).build();
         }
         return Action.goTo(AuthSafeResultOutcome.DENY.name()).build();
