@@ -166,11 +166,7 @@ public class AuthSafeEmailCollectorNode extends SingleOutcomeNode {
 
         // store attribute data in shared state
         JsonValue sharedState = context.sharedState.copy();
-//        for (AttributeInputCallback callback : userCallbacks) {
-        	logger.error("callback.getName()******"+"mail");
-        	logger.error("callback.getValue()******"+context.sharedState.get("EMAIL_ADDRESS").asString());        
             idmIntegrationService.storeAttributeInState(sharedState, "mail", context.sharedState.get("EMAIL_ADDRESS").asString());
-//        }
 
         // clean up and exit
         return goToNext()
