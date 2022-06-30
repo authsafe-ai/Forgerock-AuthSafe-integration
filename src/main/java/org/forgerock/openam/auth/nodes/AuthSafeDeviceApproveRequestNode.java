@@ -83,9 +83,6 @@ public class AuthSafeDeviceApproveRequestNode extends SingleOutcomeNode {
     public Action process(TreeContext context) {
         JsonValue sharedState = context.sharedState;
         String OTP = sharedState.get("OTP").asString();
-        logger.error("Device Management Request");
-        logger.error("Device Management Request OTP:"+OTP);
-        logger.error("SharedState"+ context.sharedState.toString());
         
         String propertyID = sharedState.get("PROPERTY_ID").asString();
         
@@ -110,19 +107,11 @@ public class AuthSafeDeviceApproveRequestNode extends SingleOutcomeNode {
 			response = client.send(request,
 			        HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
       
       ResponseBO obj = new Gson().fromJson(response.body(), ResponseBO.class);
-      System.out.println(obj.status);
 
-        logger.error(response.toString());
-		logger.error(request.headers().toString());
-		logger.error(request.method());
-		logger.error(request.uri().toString());
-		logger.error(response.body());
-        
         return goToNext().build();
        
     }

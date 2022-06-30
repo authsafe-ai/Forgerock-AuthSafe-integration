@@ -13,17 +13,16 @@ import static org.forgerock.json.JsonValue.array;
 import static org.forgerock.json.JsonValue.json;
 import static org.forgerock.json.JsonValue.object;
 import static org.forgerock.openam.auth.node.api.Action.send;
+import static org.forgerock.openam.integration.idm.IdmIntegrationService.DEFAULT_IDM_IDENTITY_ATTRIBUTE;
+import static org.forgerock.openam.integration.idm.IdmIntegrationService.PROPERTIES;
+import static org.forgerock.openam.integration.idm.IdmIntegrationService.mapContextToObject;
+import static org.forgerock.openam.utils.CollectionUtils.asSet;
 import static org.forgerock.openam.auth.nodes.helpers.IdmIntegrationHelper.getAttributeFromContext;
 import static org.forgerock.openam.auth.nodes.helpers.IdmIntegrationHelper.getObject;
 import static org.forgerock.openam.auth.nodes.helpers.IdmIntegrationHelper.getSchema;
 import static org.forgerock.openam.auth.nodes.helpers.IdmIntegrationHelper.getValidationRequirements;
 import static org.forgerock.openam.auth.nodes.helpers.IdmIntegrationHelper.stringAttribute;
 import static org.forgerock.openam.auth.nodes.helpers.IdmIntegrationHelper.validateInput;
-import static org.forgerock.openam.integration.idm.IdmIntegrationService.DEFAULT_IDM_IDENTITY_ATTRIBUTE;
-import static org.forgerock.openam.integration.idm.IdmIntegrationService.PROPERTIES;
-import static org.forgerock.openam.integration.idm.IdmIntegrationService.mapContextToObject;
-import static org.forgerock.openam.utils.CollectionUtils.asSet;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -167,11 +166,7 @@ public class AuthSafeEmailCollectorNode extends SingleOutcomeNode {
 
         // store attribute data in shared state
         JsonValue sharedState = context.sharedState.copy();
-//        for (AttributeInputCallback callback : userCallbacks) {
-        	logger.error("callback.getName()******"+"mail");
-        	logger.error("callback.getValue()******"+context.sharedState.get("EMAIL_ADDRESS").asString());        
             idmIntegrationService.storeAttributeInState(sharedState, "mail", context.sharedState.get("EMAIL_ADDRESS").asString());
-//        }
 
         // clean up and exit
         return goToNext()

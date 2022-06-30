@@ -85,12 +85,10 @@ public class AuthSafeResetPasswordNode extends SingleOutcomeNode {
     	String userName = context.sharedState.get("username").asString();
     	String email = context.sharedState.get("objectAttributes").get("mail").asString();
     	
-    	
-    	logger.error("username"+ userName);    	
+
     	
     	String transientStateeoneTimePassword = context.transientState.get("oneTimePassword").asString();    	
-    	
-    	logger.error("transientStateeoneTimePassword"+ transientStateeoneTimePassword);    	
+
     	
     	String ev;
     	
@@ -101,18 +99,10 @@ public class AuthSafeResetPasswordNode extends SingleOutcomeNode {
     	}
     	
         Optional<String> OuniversalId = identityUtils.getUniversalId(userName, realm, USER);
-    	logger.error("OuniversalId"+ OuniversalId.get());
     	String[] uid = OuniversalId.get().split(",");
-    	
-    	logger.error("OuniversalId"+ OuniversalId.get());
-    	logger.error("uid"+ uid[0].replace("id=", ""));
-    	
-    	
-    	logger.error("SharedState"+ context.sharedState.toString());
-    	logger.error("transientState"+ context.transientState.toString());
-    	
+
+
         String device_id = sharedState.get("device_id").asString();
-        logger.error("Device ID: " + device_id);
 
         String ip = sharedState.get("ip").asString();
         String ua = sharedState.get("ua").asString();
@@ -167,8 +157,7 @@ public class AuthSafeResetPasswordNode extends SingleOutcomeNode {
 		      object.put("uID", uid[0].replace("id=", ""));
 		      
 		      json = object.toString();
-		      
-		      logger.error("json request:"+json);
+
 
 		} catch (JSONException e1) {
 			// TODO Auto-generated catch block
@@ -198,12 +187,6 @@ public class AuthSafeResetPasswordNode extends SingleOutcomeNode {
 			e.printStackTrace();
 		}
 
-		logger.error(response.toString());
-		logger.error(request.headers().toString());
-		logger.error(request.method());
-		logger.error(request.uri().toString());
-		logger.error(response.body());
-		
 		return goToNext().build();
     }
     

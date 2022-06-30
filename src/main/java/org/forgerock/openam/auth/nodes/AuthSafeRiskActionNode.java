@@ -130,39 +130,7 @@ public class AuthSafeRiskActionNode implements Node {
         }
     }
     
-    private String getToEmailAddress(AMIdentity identity, String username
-            ) throws NodeProcessException {
-        String toEmailAddress;
-        try {
-            toEmailAddress = getEmailAddress(identity, username);
-            if (toEmailAddress == null) {
-                logger.warn("Email not found");
-                throw new NodeProcessException("email.not.found");
-            }
-        } catch (IdRepoException | SSOException e) {
-            logger.warn("Email lookup failure", e);
-            throw new NodeProcessException("email.lookup.failure");
-        }
-        return toEmailAddress;
-    }
 
-    private String getEmailAddress(AMIdentity identity, String userName) throws IdRepoException, SSOException {
-        String emailAttribute = "mail";
-
-        logger.debug("Using email attribute of {}", emailAttribute);
-
-        Set<String> emails = identity.getAttribute(emailAttribute);
-        String mail = null;
-
-        if (CollectionUtils.isNotEmpty(emails)) {
-            mail = emails.iterator().next();
-            logger.debug("Email address found {} with username : {}", mail, userName);
-        } else {
-            logger.debug("no email found with username : {}", userName);
-        }
-
-        return mail;
-    }
     
     @Override
     public InputState[] getInputs() {
